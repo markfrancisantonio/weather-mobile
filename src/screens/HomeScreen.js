@@ -6,9 +6,11 @@ import {
   ActivityIndicator,
   Pressable,
   Image,
+  TextInput,
+  Keyboard,
 } from "react-native";
 import { getCurrentCoords } from "../services/location";
-import { getWeatherByCoords } from "../api/weather";
+import { getWeatherByCoords, getWeatherByCity } from "../api/weather";
 import { formatTemp } from "../utils/units";
 
 export default function HomeScreen() {
@@ -16,6 +18,7 @@ export default function HomeScreen() {
   const [weather, setWeather] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [unit, setUnit] = useState("metric");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -41,6 +44,26 @@ export default function HomeScreen() {
 
   const toggleUnit = () =>
     setUnit((u) => (u === "metric" ? "imperial" : "metric"));
+
+  async function searchByCity() {
+    try {
+      const q = query.trim();
+      if (!q) {
+        setErrorMsg("Please enter a city name");
+        setStatus("error");
+        return;
+      }
+      setStatus("loading");
+      setErrorMsg("");
+      const data = await getWeatherByCity({ q, units: unit });
+      setWeather(data);
+      setStatus("ready");
+      Keyboard.dismiss?.();
+    } catch (err) {
+      setErrorMsg(err?.message || "City search failed");
+      setStatus("error");
+    }
+  }
 
   if (status === "loading") {
     return (
@@ -101,6 +124,19 @@ export default function HomeScreen() {
           Switch to {unit === "metric" ? "°F" : "°C"}
         </Text>
       </Pressable>
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.input}
+          placeholder="Search city (e.g., Tokyo)"
+          value={query}
+          onChangeText={setQuery}
+          returnKeyType="search"
+          onSubmitEditing={searchByCity}
+        />
+        <Pressable onPress={searchByCity} style={styles.searchBtn}>
+          <Text style={styles.searchBtnText}>Search</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -125,4 +161,30 @@ const styles = StyleSheet.create({
   },
   toggleText: { fontSize: 16, fontWeight: "700", color: "#111" },
   icon: { width: 120, height: 120, marginVertical: 4, tintColor: "#333" },
+  searchRow: {
+    flexDirection: "row",
+    width: "100%",
+    gap: 8,
+    marginTop: 16,
+    paddingHorizontal: 8,
+  },
+  input: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  searchBtn: {
+    paddingHorizontal: 16,
+    justifyContent: "center",
+    borderRadius: 10,
+    backgroundColor: "#0ea5e9",
+  },
+  searchBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
 });
