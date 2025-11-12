@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Pressable,
+  Image,
+} from "react-native";
 import { getCurrentCoords } from "../services/location";
 import { getWeatherByCoords } from "../api/weather";
+import { formatTemp } from "../utils/units";
 
 export default function HomeScreen() {
-  const [status, setStatus] = useState("idle"); // idle | loading | ready | error
+  const [status, setStatus] = useState("idle");
   const [weather, setWeather] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [unit, setUnit] = useState("metric");
 
   useEffect(() => {
     let mounted = true;
-
-    (async () => {
+    async function loadWeather() {
       try {
         setStatus("loading");
         const { lat, lon } = await getCurrentCoords();
@@ -24,14 +32,16 @@ export default function HomeScreen() {
         setErrorMsg(err?.message || "Something went wrong.");
         setStatus("error");
       }
-    })();
-
+    }
+    loadWeather();
     return () => {
       mounted = false;
     };
   }, []);
 
-  // loading state
+  const toggleUnit = () =>
+    setUnit((u) => (u === "metric" ? "imperial" : "metric"));
+
   if (status === "loading") {
     return (
       <View style={styles.container}>
@@ -41,7 +51,6 @@ export default function HomeScreen() {
     );
   }
 
-  // error state
   if (status === "error") {
     return (
       <View style={styles.container}>
@@ -50,7 +59,6 @@ export default function HomeScreen() {
     );
   }
 
-  // idle state
   if (status === "idle") {
     return (
       <View style={styles.container}>
@@ -59,16 +67,40 @@ export default function HomeScreen() {
     );
   }
 
-  // success state
-  const temp = Math.round(weather.main.temp);
+  const tempC = weather.main.temp;
+  const displayTemp = formatTemp(tempC, unit);
   const city = weather.name;
   const desc = weather.weather?.[0]?.description ?? "";
+  const unitLabel = unit === "metric" ? "°C" : "°F";
+  const icon = weather.weather?.[0]?.icon;
+  const iconUrl = icon
+    ? `https://openweathermap.org/img/wn/${icon}@4x.png`
+    : null;
+  const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
+  const descLc = (desc || "").toLowerCase();
+  const bgColor = descLc.includes("cloud")
+    ? "#dfe6ed"
+    : descLc.includes("rain")
+    ? "#a5c8ff"
+    : descLc.includes("clear")
+    ? "#fef5b8"
+    : "#f0f4f8";
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: bgColor }]}>
       <Text style={styles.title}>{city}</Text>
-      <Text style={styles.temp}>{temp}°C</Text>
-      <Text style={styles.text}>{desc}</Text>
+      {iconUrl ? <Image source={{ uri: iconUrl }} style={styles.icon} /> : null}
+      <Text style={styles.temp}>
+        {displayTemp}
+        {unitLabel}
+      </Text>
+      <Text style={styles.text}>{cap(desc)}</Text>
+
+      <Pressable onPress={toggleUnit} style={styles.toggle}>
+        <Text style={styles.toggleText}>
+          Switch to {unit === "metric" ? "°F" : "°C"}
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -81,19 +113,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f4f8",
     padding: 16,
   },
-  text: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
+  text: { fontSize: 18, fontWeight: "600", color: "#333" },
+  title: { fontSize: 28, fontWeight: "700", marginBottom: 8 },
+  temp: { fontSize: 64, fontWeight: "800", color: "#333" },
+  toggle: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#e3e8ef",
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  temp: {
-    fontSize: 64,
-    fontWeight: "800",
-    color: "#333",
-  },
+  toggleText: { fontSize: 16, fontWeight: "700", color: "#111" },
+  icon: { width: 120, height: 120, marginVertical: 4, tintColor: "#333" },
 });
