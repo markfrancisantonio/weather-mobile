@@ -1,0 +1,21 @@
+import { OPENWEATHER_API_KEY } from "@env";
+
+const BASE = "https://api.openweathermap.org/data/2.5";
+
+const apiKey = OPENWEATHER_API_KEY;
+
+function toUrl(path, params) {
+  const qs = new URLSearchParams(params).toString();
+  return `${BASE}${path}?${qs}`;
+}
+
+export async function getWeatherByCoords({ lat, lon, units = "metric" }) {
+  if (!apiKey) throw new Error("Missing OPENWEATHER_API_KEY");
+  const url = toUrl("/weather", { lat, lon, units, appid: apiKey });
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
