@@ -58,6 +58,7 @@ export default function HomeScreen() {
       const data = await getWeatherByCity({ q, units: unit });
       setWeather(data);
       setStatus("ready");
+      setQuery("");
       Keyboard.dismiss?.();
     } catch (err) {
       setErrorMsg(err?.message || "City search failed");
@@ -125,6 +126,7 @@ export default function HomeScreen() {
       const data = await getWeatherByCoords({ lat, lon, units: unit });
       setWeather(data);
       setStatus("ready");
+      setQuery("");
       Keyboard.dismiss?.();
     } catch (err) {
       setErrorMsg(err?.message || "Could not get current location weather");
