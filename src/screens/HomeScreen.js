@@ -33,7 +33,7 @@ export default function HomeScreen() {
       try {
         setStatus("loading");
         const { lat, lon } = await getCurrentCoords();
-        const data = await getWeatherByCoords({ lat, lon, units: "metric" });
+        const data = await getWeatherByCoords({ lat, lon, units: unit });
         if (!mounted) return;
         setWeather(data);
         setStatus("ready");
@@ -87,8 +87,32 @@ export default function HomeScreen() {
     };
   }, []);
 
-  const toggleUnit = () =>
-    setUnit((u) => (u === "metric" ? "imperial" : "metric"));
+  const toggleUnit = async () => {
+    const next = unit === "metric" ? "imperial" : "metric";
+    setUnit(next);
+
+    if (weather?.coord) {
+      try {
+        setStatus("loading");
+        const { lat, lon } = weather.coord;
+        const data = await getWeatherByCoords({ lat, lon, units: next });
+        setWeather(data);
+        setStatus("ready");
+        await saveLastSelection({
+          source: "gps", // using coords works for both city/GPS origins
+          lat,
+          lon,
+          units: next,
+        });
+      } catch (err) {
+        setErrorMsg(err?.message || "Failed to switch units");
+        setStatus("error");
+      }
+    } else {
+      // no weather loaded yet; just remember preference
+      await saveLastSelection({ source: "city", q: "", units: next });
+    }
+  };
 
   async function searchByCity() {
     try {
@@ -150,8 +174,8 @@ export default function HomeScreen() {
     );
   }
 
-  const tempC = weather.main.temp;
-  const displayTemp = formatTemp(tempC, unit);
+  const temp = weather.main.temp;
+  const displayTemp = formatTemp(temp, unit);
   const city = weather.name;
   const country = weather.sys?.country || "";
   const desc = weather.weather?.[0]?.description ?? "";
