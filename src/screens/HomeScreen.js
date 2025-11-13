@@ -109,6 +109,20 @@ export default function HomeScreen() {
     ? "#fef5b8"
     : "#f0f4f8";
 
+  async function useMyLocation() {
+    try {
+      setStatus("loading"), setErrorMsg("");
+      const { lat, lon } = await getCurrentCoords();
+      const data = await getWeatherByCoords({ lat, lon, units: unit });
+      setWeather(data);
+      setStatus("ready");
+      Keyboard.dismiss?.();
+    } catch (err) {
+      setErrorMsg(err?.message || "Could not get current location weather");
+      setStatus("error");
+    }
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
       <Text style={styles.title}>{city}</Text>
@@ -135,6 +149,9 @@ export default function HomeScreen() {
         />
         <Pressable onPress={searchByCity} style={styles.searchBtn}>
           <Text style={styles.searchBtnText}>Search</Text>
+        </Pressable>
+        <Pressable onPress={useMyLocation} style={styles.locBtn}>
+          <Text style={styles.locBtnText}>Use My Location </Text>
         </Pressable>
       </View>
     </View>
@@ -186,5 +203,17 @@ const styles = StyleSheet.create({
   searchBtnText: {
     color: "#fff",
     fontWeight: "700",
+  },
+  locBtn: {
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#16a34a", // green
+  },
+  locBtnText: {
+    color: "#fff",
+    fontWeight: "800",
+    textAlign: "center",
   },
 });
