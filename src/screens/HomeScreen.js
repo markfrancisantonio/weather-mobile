@@ -103,6 +103,7 @@ export default function HomeScreen() {
   const tempC = weather.main.temp;
   const displayTemp = formatTemp(tempC, unit);
   const city = weather.name;
+  const country = weather.sys?.country || "";
   const desc = weather.weather?.[0]?.description ?? "";
   const unitLabel = unit === "metric" ? "°C" : "°F";
   const icon = weather.weather?.[0]?.icon;
@@ -136,7 +137,10 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <Text style={styles.title}>{city}</Text>
+      <Text style={styles.title}>
+        {city}
+        {country ? `, ${country}` : ""}
+      </Text>
       {iconUrl ? <Image source={{ uri: iconUrl }} style={styles.icon} /> : null}
       <Text style={styles.temp}>
         {displayTemp}
