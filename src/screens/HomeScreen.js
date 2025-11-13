@@ -8,10 +8,16 @@ import {
   Image,
   TextInput,
   Keyboard,
+  LayoutAnimation,
 } from "react-native";
 import { getCurrentCoords } from "../services/location";
 import { getWeatherByCoords, getWeatherByCity } from "../api/weather";
 import { formatTemp } from "../utils/units";
+import {
+  saveLastSelection,
+  loadLastSelection,
+  clearLastSelection,
+} from "../store/weatherStore";
 
 export default function HomeScreen() {
   const [status, setStatus] = useState("idle");
@@ -22,6 +28,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let mounted = true;
+
     async function loadWeather() {
       try {
         setStatus("loading");
@@ -36,7 +43,45 @@ export default function HomeScreen() {
         setStatus("error");
       }
     }
-    loadWeather();
+
+    async function init() {
+      const last = await loadLastSelection();
+      if (last && mounted) {
+        try {
+          setStatus("loading");
+          setUnit(last.units || "metric");
+
+          if (last.source === "city" && last.q) {
+            const data = await getWeatherByCity({
+              q: last.q,
+              units: last.units,
+            });
+            if (!mounted) return;
+            setWeather(data);
+          } else if (last.source === "gps" && last.lat && last.lon) {
+            const data = await getWeatherByCoords({
+              lat: last.lat,
+              lon: last.lon,
+              units: last.units,
+            });
+            if (!mounted) return;
+            setWeather(data);
+          } else {
+            await loadWeather();
+          }
+
+          if (mounted) setStatus("ready");
+        } catch (err) {
+          console.log("Load last selection error:", err);
+          if (mounted) setStatus("idle");
+        }
+      } else {
+        await loadWeather();
+      }
+    }
+
+    init();
+
     return () => {
       mounted = false;
     };
@@ -58,6 +103,11 @@ export default function HomeScreen() {
       const data = await getWeatherByCity({ q, units: unit });
       setWeather(data);
       setStatus("ready");
+      await saveLastSelection({
+        source: "city",
+        q,
+        units: unit,
+      });
       setQuery("");
       Keyboard.dismiss?.();
     } catch (err) {
@@ -122,11 +172,18 @@ export default function HomeScreen() {
 
   async function useMyLocation() {
     try {
-      setStatus("loading"), setErrorMsg("");
+      setStatus("loading");
+      setErrorMsg("");
       const { lat, lon } = await getCurrentCoords();
       const data = await getWeatherByCoords({ lat, lon, units: unit });
       setWeather(data);
       setStatus("ready");
+      await saveLastSelection({
+        source: "gps",
+        lat,
+        lon,
+        units: unit,
+      });
       setQuery("");
       Keyboard.dismiss?.();
     } catch (err) {
