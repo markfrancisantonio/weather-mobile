@@ -78,6 +78,15 @@ export default function HomeScreen() {
     return (
       <View style={styles.container}>
         <Text style={[styles.text, { color: "red" }]}>⚠️ {errorMsg}</Text>
+        <Pressable
+          onPress={() => {
+            setErrorMsg("");
+            useMyLocation();
+          }}
+          style={styles.retryBtn}
+        >
+          <Text style={styles.retryText}>Try Again</Text>
+        </Pressable>
       </View>
     );
   }
@@ -214,6 +223,18 @@ const styles = StyleSheet.create({
   locBtnText: {
     color: "#fff",
     fontWeight: "800",
+    textAlign: "center",
+  },
+  retryBtn: {
+    marginTop: 16,
+    backgroundColor: "#0ea5e9",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  retryText: {
+    color: "#fff",
+    fontWeight: "700",
     textAlign: "center",
   },
 });
