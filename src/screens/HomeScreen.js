@@ -8,10 +8,14 @@ import {
   Image,
   TextInput,
   Keyboard,
-  LayoutAnimation,
+  ScrollView,
 } from "react-native";
 import { getCurrentCoords } from "../services/location";
-import { getWeatherByCoords, getWeatherByCity } from "../api/weather";
+import {
+  getWeatherByCoords,
+  getWeatherByCity,
+  getForecastByCoords,
+} from "../api/weather";
 import { formatTemp } from "../utils/units";
 import {
   saveLastSelection,
@@ -25,6 +29,7 @@ export default function HomeScreen() {
   const [errorMsg, setErrorMsg] = useState("");
   const [unit, setUnit] = useState("metric");
   const [query, setQuery] = useState("");
+  const [forecast, setForecast] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -33,9 +38,18 @@ export default function HomeScreen() {
       try {
         setStatus("loading");
         const { lat, lon } = await getCurrentCoords();
+
         const data = await getWeatherByCoords({ lat, lon, units: unit });
+        const forecastData = await getForecastByCoords({
+          lat,
+          lon,
+          units: unit,
+        });
+
         if (!mounted) return;
+
         setWeather(data);
+        setForecast(forecastData);
         setStatus("ready");
       } catch (err) {
         if (!mounted) return;
@@ -56,16 +70,33 @@ export default function HomeScreen() {
               q: last.q,
               units: last.units,
             });
+
+            const forecastData = await getForecastByCoords({
+              lat: data.coord.lat,
+              lon: data.coord.lon,
+              units: last.units,
+            });
+
             if (!mounted) return;
+
             setWeather(data);
+            setForecast(forecastData);
           } else if (last.source === "gps" && last.lat && last.lon) {
             const data = await getWeatherByCoords({
               lat: last.lat,
               lon: last.lon,
               units: last.units,
             });
+
+            const forecastData = await getForecastByCoords({
+              lat: last.lat,
+              lon: last.lon,
+              units: last.units,
+            });
+
             if (!mounted) return;
             setWeather(data);
+            setForecast(forecastData);
           } else {
             await loadWeather();
           }
@@ -229,6 +260,33 @@ export default function HomeScreen() {
       </Text>
       <Text style={styles.text}>{cap(desc)}</Text>
 
+      {forecast.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.forecastRow}
+        >
+          {forecast.slice(0, 8).map((item, index) => {
+            const time = new Date(item.dt * 1000).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              hour12: true,
+            });
+
+            const icon = item.weather?.[0]?.icon;
+            const iconUrl = `https://openweathermap.org/img/wn/${icon}@2x.png`;
+            const temp = formatTemp(item.main.temp, unit);
+
+            return (
+              <View key={index} style={styles.forecastItem}>
+                <Text style={styles.forecastTime}>{time}</Text>
+                <Image source={{ uri: iconUrl }} style={styles.forecastIcon} />
+                <Text style={styles.forecastTemp}>{temp}</Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
+
       <Pressable onPress={toggleUnit} style={styles.toggle}>
         <Text style={styles.toggleText}>
           Switch to {unit === "metric" ? "°F" : "°C"}
@@ -322,6 +380,42 @@ const styles = StyleSheet.create({
   retryText: {
     color: "#fff",
     fontWeight: "700",
+    textAlign: "center",
+  },
+  forecastRow: {
+    marginTop: 16,
+    marginBottom: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  forecastItem: {
+    width: 70,
+    height: 120,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    marginRight: 10,
+  },
+  forecastTime: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  forecastIcon: {
+    width: 32,
+    height: 32,
+    marginBottom: 4,
+  },
+  forecastTemp: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#111827",
+    marginTop: 4,
     textAlign: "center",
   },
 });

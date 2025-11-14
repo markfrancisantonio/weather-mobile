@@ -33,3 +33,16 @@ export async function getWeatherByCity({ q, units = "metric" }) {
   }
   return res.json();
 }
+
+export async function getForecastByCoords({ lat, lon, units = "metric" }) {
+  if (!apiKey) throw new Error("Missing OPENWEATHER_API_KEY");
+
+  const url = toUrl("/forecast", { lat, lon, units, appid: apiKey });
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.message || `Forecast request failed (${res.status})`);
+  }
+  const data = await res.json();
+  return data.list;
+}
