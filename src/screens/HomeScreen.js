@@ -23,7 +23,7 @@ import {
   clearLastSelection,
 } from "../store/weatherStore";
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const [status, setStatus] = useState("idle");
   const [weather, setWeather] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -308,6 +308,12 @@ export default function HomeScreen() {
           <Text style={styles.locBtnText}>Use My Location </Text>
         </Pressable>
       </View>
+      <Pressable
+        onPress={() => navigation.navigate("Favorites")}
+        style={styles.favLink}
+      >
+        <Text style={styles.favLinkText}>Go to Favorites</Text>
+      </Pressable>
     </View>
   );
 }
@@ -328,7 +334,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: "#e3e8ef",
+    backgroundColor: "#d1d5db",
+    borderWidth: 1,
+    borderColor: "#9ca3af",
   },
   toggleText: { fontSize: 16, fontWeight: "700", color: "#111" },
   icon: { width: 120, height: 120, marginVertical: 4, tintColor: "#333" },
@@ -416,6 +424,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#111827",
     marginTop: 4,
+    textAlign: "center",
+  },
+  favLink: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#d1d5db",
+    borderWidth: 1,
+    borderColor: "#9ca3af",
+  },
+  favLinkText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111827",
     textAlign: "center",
   },
 });
