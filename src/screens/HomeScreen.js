@@ -9,6 +9,7 @@ import {
   TextInput,
   Keyboard,
   ScrollView,
+  Alert,
 } from "react-native";
 import { getCurrentCoords } from "../services/location";
 import {
@@ -21,6 +22,7 @@ import {
   saveLastSelection,
   loadLastSelection,
   clearLastSelection,
+  addFavorite,
 } from "../store/weatherStore";
 
 export default function HomeScreen({ navigation }) {
@@ -130,7 +132,7 @@ export default function HomeScreen({ navigation }) {
         setWeather(data);
         setStatus("ready");
         await saveLastSelection({
-          source: "gps", // using coords works for both city/GPS origins
+          source: "gps",
           lat,
           lon,
           units: next,
@@ -140,7 +142,6 @@ export default function HomeScreen({ navigation }) {
         setStatus("error");
       }
     } else {
-      // no weather loaded yet; just remember preference
       await saveLastSelection({ source: "city", q: "", units: next });
     }
   };
@@ -247,6 +248,38 @@ export default function HomeScreen({ navigation }) {
     }
   }
 
+  async function handleAddFavorite() {
+    if (!weather) return;
+
+    const city = weather.name;
+    const country = weather.sys?.country || "";
+    const lat = weather.coord?.lat;
+    const lon = weather.coord?.lon;
+
+    if (!city || !lat || !lon) {
+      setErrorMsg("Missing data to save this city as favorite.");
+      setStatus("error");
+      return;
+    }
+
+    const fav = { name: city, country, lat, lon };
+
+    try {
+      await addFavorite(fav);
+      Alert.alert(
+        "Added to Favorites",
+        `${city}${country ? `, ${country}` : ""} has been saved.`
+      );
+    } catch (err) {
+      console.log("handleAddFavorite error:", err);
+      Alert.alert(
+        "Favorite not saved",
+        err?.message ||
+          "Could not save this city as a favorite. Please try again."
+      );
+    }
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
       <Text style={styles.title}>
@@ -259,6 +292,12 @@ export default function HomeScreen({ navigation }) {
         {unitLabel}
       </Text>
       <Text style={styles.text}>{cap(desc)}</Text>
+      <Pressable
+        onPress={handleAddFavorite}
+        style={styles.addToFavoritesButton}
+      >
+        <Text style={styles.addToFavoritesButtonText}>Add to Favorites</Text>
+      </Pressable>
 
       {forecast.length > 0 && (
         <ScrollView
@@ -371,7 +410,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: "#16a34a", // green
+    backgroundColor: "#16a34a",
   },
   locBtnText: {
     color: "#fff",
@@ -426,6 +465,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: "center",
   },
+  addToFavoritesButton: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: "#0ea5e9",
+    alignSelf: "center",
+  },
+
+  addToFavoritesButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+
   favLink: {
     marginTop: 12,
     paddingVertical: 8,
