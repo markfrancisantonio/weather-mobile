@@ -1,14 +1,47 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import { loadFavorites, removeFavorite } from "../store/weatherStore";
+import {
+  loadFavorites,
+  removeFavorite,
+  loadLastSelection,
+  saveLastSelection,
+} from "../store/weatherStore";
+import { getWeatherByCoords } from "../api/weather";
+import { formatTemp } from "../utils/units";
+import { useNavigation } from "@react-navigation/native";
 
 export default function FavoritesScreen() {
+  const navigation = useNavigation();
   const [favs, setFavs] = useState([]);
 
   useEffect(() => {
     async function fetchFavs() {
       const list = await loadFavorites();
-      setFavs(list);
+
+      const last = await loadLastSelection();
+      const units = last?.units || "metric";
+
+      const enriched = await Promise.all(
+        list.map(async (city) => {
+          try {
+            const weather = await getWeatherByCoords({
+              lat: city.lat,
+              lon: city.lon,
+              units,
+            });
+
+            const rawTemp = formatTemp(weather.main.temp, units);
+            const unitLabel = units === "metric" ? "°C" : "°F";
+            const temp = `${rawTemp}${unitLabel}`;
+
+            return { ...city, temp };
+          } catch (err) {
+            console.log("Error loading weather for favorite:", err);
+            return { ...city, temp: "N/A" };
+          }
+        })
+      );
+      setFavs(enriched);
     }
     fetchFavs();
   }, []);
@@ -22,9 +55,30 @@ export default function FavoritesScreen() {
       ) : (
         favs.map((city, index) => (
           <View key={index} style={styles.cityRow}>
-            <Text style={styles.cityText}>
-              {city.name}, {city.country}
-            </Text>
+            <Pressable
+              style={styles.cityInfo}
+              onPress={async () => {
+                const last = await loadLastSelection();
+                const units = last?.units || "metric";
+
+                await saveLastSelection({
+                  source: "gps",
+                  lat: city.lat,
+                  lon: city.lon,
+                  units,
+                });
+
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "Home" }],
+                });
+              }}
+            >
+              <Text style={styles.cityText}>
+                {city.name}, {city.country}
+              </Text>
+              <Text style={styles.cityTemp}>{city.temp}</Text>
+            </Pressable>
 
             <Pressable
               style={styles.removeBtn}
@@ -86,5 +140,14 @@ const styles = StyleSheet.create({
   removeText: {
     color: "white",
     fontWeight: "700",
+  },
+  cityInfo: {
+    flexDirection: "column",
+  },
+  cityTemp: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#4b5563",
+    marginTop: 2,
   },
 });

@@ -78,7 +78,11 @@ export async function removeFavorite(name, country) {
     const updated = list.filter(
       (item) => !(item.name === name && item.country === country)
     );
+
+    await saveFavorites(updated);
+    return updated;
   } catch (err) {
-    console.log("removeFavorites error:", err);
+    console.log("removeFavorite error:", err);
+    return [];
   }
 }
