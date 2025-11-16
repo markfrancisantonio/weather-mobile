@@ -3,23 +3,22 @@ import { View, Text, StyleSheet, Pressable } from "react-native";
 import {
   loadFavorites,
   removeFavorite,
-  loadLastSelection,
   saveLastSelection,
 } from "../store/weatherStore";
 import { getWeatherByCoords } from "../api/weather";
 import { formatTemp } from "../utils/units";
 import { useNavigation } from "@react-navigation/native";
+import UnitToggleButton from "../components/UnitToggleButton";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function FavoritesScreen() {
   const navigation = useNavigation();
   const [favs, setFavs] = useState([]);
+  const [unit, setUnit] = useState("metric");
 
   useEffect(() => {
     async function fetchFavs() {
       const list = await loadFavorites();
-
-      const last = await loadLastSelection();
-      const units = last?.units || "metric";
 
       const enriched = await Promise.all(
         list.map(async (city) => {
@@ -27,11 +26,11 @@ export default function FavoritesScreen() {
             const weather = await getWeatherByCoords({
               lat: city.lat,
               lon: city.lon,
-              units,
+              units: unit,
             });
 
-            const rawTemp = formatTemp(weather.main.temp, units);
-            const unitLabel = units === "metric" ? "°C" : "°F";
+            const rawTemp = formatTemp(weather.main.temp, unit);
+            const unitLabel = unit === "metric" ? "°C" : "°F";
             const temp = `${rawTemp}${unitLabel}`;
 
             return { ...city, temp };
@@ -44,11 +43,18 @@ export default function FavoritesScreen() {
       setFavs(enriched);
     }
     fetchFavs();
-  }, []);
+  }, [unit]);
+  function toggleUnit() {
+    const next = unit === "metric" ? "imperial" : "metric";
+    setUnit(next);
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Favorites</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Favorites</Text>
+        <UnitToggleButton unit={unit} onToggle={toggleUnit} />
+      </View>
 
       {favs.length === 0 ? (
         <Text style={styles.text}>No favorites saved yet.</Text>
@@ -58,14 +64,11 @@ export default function FavoritesScreen() {
             <Pressable
               style={styles.cityInfo}
               onPress={async () => {
-                const last = await loadLastSelection();
-                const units = last?.units || "metric";
-
                 await saveLastSelection({
                   source: "gps",
                   lat: city.lat,
                   lon: city.lon,
-                  units,
+                  units: unit,
                 });
 
                 navigation.reset({
@@ -92,16 +95,17 @@ export default function FavoritesScreen() {
           </View>
         ))
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "flex-start",
+    alignItems: "stretch",
     padding: 16,
+    paddingTop: 24,
     backgroundColor: "#f0f4f8",
   },
   title: {
@@ -149,5 +153,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#4b5563",
     marginTop: 2,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    width: "100%",
+    paddingHorizontal: 16,
   },
 });

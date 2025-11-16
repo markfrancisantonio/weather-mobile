@@ -1,9 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, Image, Pressable } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import { formatTemp } from "../utils/units";
 import { capitalize, getIconUrl } from "../helpers/weatherHelpers";
 
-export default function WeatherHeader({ weather, unit, onToggleUnit }) {
+export default function WeatherHeader({ weather, unit }) {
   if (!weather) return null;
 
   const temp = weather.main?.temp;
@@ -19,7 +19,7 @@ export default function WeatherHeader({ weather, unit, onToggleUnit }) {
     <View style={styles.header}>
       <Text style={styles.title}>
         {city}
-        {country ? ` ${country}` : ""}
+        {country ? `, ${country}` : ""}
       </Text>
       {iconUrl ? <Image source={{ uri: iconUrl }} style={styles.icon} /> : null}
       <Text style={styles.temp}>
@@ -27,11 +27,6 @@ export default function WeatherHeader({ weather, unit, onToggleUnit }) {
         {unitLabel}
       </Text>
       <Text style={styles.description}>{capitalize(desc)}</Text>
-      <Pressable onPress={onToggleUnit} style={styles.toggle}>
-        <Text style={styles.toggleText}>
-          Switch to {unit === "metric" ? "°F" : "°C"}
-        </Text>
-      </Pressable>
     </View>
   );
 }
@@ -64,19 +59,5 @@ const styles = StyleSheet.create({
     height: 120,
     marginVertical: 4,
     tintColor: "#333",
-  },
-  toggle: {
-    marginTop: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#d1d5db",
-    borderWidth: 1,
-    borderColor: "#9ca3af",
-  },
-  toggleText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
   },
 });

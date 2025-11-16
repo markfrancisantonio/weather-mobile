@@ -5,8 +5,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   Pressable,
+  Image,
   TextInput,
   Keyboard,
+  ScrollView,
   Alert,
 } from "react-native";
 import { getCurrentCoords } from "../services/location";
@@ -19,10 +21,13 @@ import {
   saveLastSelection,
   loadLastSelection,
   addFavorite,
+  loadFavorites,
 } from "../store/weatherStore";
 import { getBackgroundColor } from "../helpers/weatherHelpers";
 import ForecastStrip from "../components/ForecastStrip";
 import WeatherHeader from "../components/WeatherHeader";
+import UnitToggleButton from "../components/UnitToggleButton";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen({ navigation }) {
   const [status, setStatus] = useState("idle");
@@ -31,6 +36,7 @@ export default function HomeScreen({ navigation }) {
   const [unit, setUnit] = useState("metric");
   const [query, setQuery] = useState("");
   const [forecast, setForecast] = useState([]);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   async function fetchAndSetWeatherByCoords(lat, lon, units) {
     const data = await getWeatherByCoords({ lat, lon, units });
@@ -105,6 +111,29 @@ export default function HomeScreen({ navigation }) {
     };
   }, []);
 
+  useEffect(() => {
+    async function checkFavorite() {
+      if (!weather) {
+        setIsFavorite(false);
+        return;
+      }
+
+      try {
+        const favs = await loadFavorites();
+        const match = favs.find(
+          (c) =>
+            c.name === weather.name &&
+            c.country === (weather.sys?.country || "")
+        );
+        setIsFavorite(!!match);
+      } catch (err) {
+        console.log("checkFavorite error:", err);
+      }
+    }
+
+    checkFavorite();
+  }, [weather]);
+
   const toggleUnit = async () => {
     const next = unit === "metric" ? "imperial" : "metric";
     setUnit(next);
@@ -113,7 +142,6 @@ export default function HomeScreen({ navigation }) {
       try {
         const { lat, lon } = weather.coord;
 
-        // reuse your helper to update BOTH weather + forecast
         await fetchAndSetWeatherByCoords(lat, lon, next);
 
         await saveLastSelection({
@@ -178,7 +206,7 @@ export default function HomeScreen({ navigation }) {
 
   if (status === "error") {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.errorContainer}>
         <Text style={[styles.text, { color: "red" }]}>⚠️ {errorMsg}</Text>
         <Pressable
           onPress={() => {
@@ -189,7 +217,7 @@ export default function HomeScreen({ navigation }) {
         >
           <Text style={styles.retryText}>Try Again</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -244,6 +272,7 @@ export default function HomeScreen({ navigation }) {
 
     try {
       await addFavorite(fav);
+      setIsFavorite(true);
       Alert.alert(
         "Added to Favorites",
         `${city}${country ? `, ${country}` : ""} has been saved.`
@@ -259,67 +288,60 @@ export default function HomeScreen({ navigation }) {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <WeatherHeader weather={weather} unit={unit} onToggleUnit={toggleUnit} />
-      <Pressable
-        onPress={handleAddFavorite}
-        style={styles.addToFavoritesButton}
-      >
-        <Text style={styles.addToFavoritesButtonText}>Add to Favorites</Text>
-      </Pressable>
-
-      <ForecastStrip forecast={forecast} unit={unit} />
-
-      <View style={styles.searchRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Search city (e.g., Tokyo)"
-          value={query}
-          onChangeText={setQuery}
-          returnKeyType="search"
-          onSubmitEditing={searchByCity}
-        />
-        <Pressable onPress={searchByCity} style={styles.searchBtn}>
-          <Text style={styles.searchBtnText}>Search</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.headerRow}>
+          <View style={styles.searchRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="Search city (e.g., Tokyo)"
+              value={query}
+              onChangeText={setQuery}
+              returnKeyType="search"
+              onSubmitEditing={searchByCity}
+            />
+            <Pressable onPress={searchByCity} style={styles.searchBtn}>
+              <Text style={styles.searchBtnText}>Search</Text>
+            </Pressable>
+          </View>
+          <UnitToggleButton unit={unit} onToggle={toggleUnit} />
+        </View>
+        <View style={styles.useMyLocation}>
+          <Pressable onPress={useMyLocation} style={styles.locBtn}>
+            <Text style={styles.locBtnText}>Use My Location </Text>
+          </Pressable>
+        </View>
+        <WeatherHeader weather={weather} unit={unit} />
+        <Pressable
+          onPress={handleAddFavorite}
+          style={styles.addToFavoritesButton}
+        >
+          <Text style={styles.addToFavoritesButtonText}>
+            {isFavorite ? "⭐" : "☆"}
+          </Text>
         </Pressable>
-        <Pressable onPress={useMyLocation} style={styles.locBtn}>
-          <Text style={styles.locBtnText}>Use My Location </Text>
-        </Pressable>
-      </View>
-      <Pressable
-        onPress={() => navigation.navigate("Favorites")}
-        style={styles.favLink}
-      >
-        <Text style={styles.favLinkText}>Go to Favorites</Text>
-      </Pressable>
-    </View>
+        <ForecastStrip forecast={forecast} unit={unit} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "flex-start",
+    alignItems: "stretch",
     backgroundColor: "#f0f4f8",
     padding: 16,
+    paddingTop: 24,
   },
   text: { fontSize: 18, fontWeight: "600", color: "#333" },
-  toggle: {
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#d1d5db",
-    borderWidth: 1,
-    borderColor: "#9ca3af",
-  },
-  toggleText: { fontSize: 16, fontWeight: "700", color: "#111" },
   searchRow: {
     flexDirection: "row",
-    width: "100%",
+    alignItems: "center",
+    flex: 1,
     gap: 8,
-    marginTop: 16,
+    marginTop: 4,
     paddingHorizontal: 8,
   },
   input: {
@@ -332,6 +354,7 @@ const styles = StyleSheet.create({
     borderColor: "#e5e7eb",
   },
   searchBtn: {
+    height: 44,
     paddingHorizontal: 16,
     justifyContent: "center",
     borderRadius: 10,
@@ -381,19 +404,27 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  favLink: {
-    marginTop: 12,
-    paddingVertical: 8,
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    width: "100%",
     paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#d1d5db",
-    borderWidth: 1,
-    borderColor: "#9ca3af",
+    marginBottom: 4,
   },
-  favLinkText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-    textAlign: "center",
+  useMyLocation: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#f0f4f8",
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
 });
