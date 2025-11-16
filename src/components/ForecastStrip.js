@@ -19,13 +19,15 @@ export default function ForecastStrip({ forecast, unit }) {
         });
 
         const icon = item.weather?.[0]?.icon;
-        const iconUrl = getIconUrl(icon, "2x");
         const temp = formatTemp(item.main.temp, unit);
 
         return (
           <View key={index} style={styles.forecastItem}>
             <Text style={styles.forecastTime}>{time}</Text>
-            <Image source={{ uri: iconUrl }} style={styles.forecastIcon} />
+            <Image
+              source={{ uri: getIconUrl(icon, "4x") }}
+              style={styles.forecastIcon}
+            />
             <Text style={styles.forecastTemp}>{temp}</Text>
           </View>
         );
@@ -58,8 +60,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   forecastIcon: {
-    width: 32,
-    height: 32,
+    width: 48,
+    height: 48,
     marginBottom: 4,
   },
   forecastTemp: {

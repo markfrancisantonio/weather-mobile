@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import {
   loadFavorites,
   removeFavorite,
@@ -62,48 +62,49 @@ export default function FavoritesScreen() {
         <UnitToggleButton unit={unit} onToggle={toggleUnit} />
       </View>
 
-      {favs.length === 0 ? (
-        <Text style={styles.text}>No favorites saved yet.</Text>
-      ) : (
-        favs.map((city) => (
-          <View
-            key={`${city.name}-${city.country}-${city.lat}-${city.lon}`}
-            style={styles.cityRow}
-          >
-            <Pressable
-              style={styles.cityInfo}
-              onPress={async () => {
-                await saveLastSelection({
-                  source: "gps",
-                  lat: city.lat,
-                  lon: city.lon,
-                  units: unit,
-                });
-
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "Home" }],
-                });
-              }}
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        {favs.length === 0 ? (
+          <Text style={styles.text}>No favorites saved yet.</Text>
+        ) : (
+          favs.map((city) => (
+            <View
+              key={`${city.name}-${city.country}-${city.lat}-${city.lon}`}
+              style={styles.cityRow}
             >
-              <Text style={styles.cityText}>
-                {city.name}, {city.country}
-              </Text>
-              <Text style={styles.cityTemp}>{city.temp}</Text>
-            </Pressable>
+              <Pressable
+                style={styles.cityInfo}
+                onPress={async () => {
+                  await saveLastSelection({
+                    source: "gps",
+                    lat: city.lat,
+                    lon: city.lon,
+                    units: unit,
+                  });
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "Home" }],
+                  });
+                }}
+              >
+                <Text style={styles.cityText}>
+                  {city.name}, {city.country}
+                </Text>
+                <Text style={styles.cityTemp}>{city.temp}</Text>
+              </Pressable>
 
-            <Pressable
-              style={styles.removeBtn}
-              onPress={async () => {
-                const updated = await removeFavorite(city.name, city.country);
-                setFavs(updated);
-              }}
-            >
-              <Text style={styles.removeText}>Remove</Text>
-            </Pressable>
-          </View>
-        ))
-      )}
+              <Pressable
+                style={styles.removeBtn}
+                onPress={async () => {
+                  const updated = await removeFavorite(city.name, city.country);
+                  setFavs(updated);
+                }}
+              >
+                <Text style={styles.removeText}>Remove</Text>
+              </Pressable>
+            </View>
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
     padding: 16,
     paddingTop: 24,
-    backgroundColor: "#f0f4f8",
+    backgroundColor: "#d8e0e7",
   },
   title: {
     fontSize: 24,

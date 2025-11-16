@@ -23,11 +23,16 @@ import {
   addFavorite,
   loadFavorites,
 } from "../store/weatherStore";
-import { getBackgroundColor } from "../helpers/weatherHelpers";
+import {
+  getBackgroundColor,
+  groupForecastIntoDays,
+} from "../helpers/weatherHelpers";
 import ForecastStrip from "../components/ForecastStrip";
 import WeatherHeader from "../components/WeatherHeader";
 import UnitToggleButton from "../components/UnitToggleButton";
 import { SafeAreaView } from "react-native-safe-area-context";
+import FiveDayForecast from "../components/FiveDayForecast";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function HomeScreen({ navigation }) {
   const [status, setStatus] = useState("idle");
@@ -287,10 +292,12 @@ export default function HomeScreen({ navigation }) {
       );
     }
   }
+  const fiveDay = groupForecastIntoDays(forecast, unit);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.pageTitle}>Weather Forecast</Text>
         <View style={styles.topCard}>
           {/* Row 1 — Search */}
           <View style={styles.row1}>
@@ -317,7 +324,12 @@ export default function HomeScreen({ navigation }) {
             <UnitToggleButton unit={unit} onToggle={toggleUnit} />
           </View>
         </View>
-        <View style={styles.weatherCard}>
+        <LinearGradient
+          colors={[bgColor, "#ffffff"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.weatherCard}
+        >
           <Text style={styles.sectionTitle}>Current Weather</Text>
           <WeatherHeader
             weather={weather}
@@ -325,11 +337,15 @@ export default function HomeScreen({ navigation }) {
             isFavorite={isFavorite}
             onToggleFavorite={handleAddFavorite}
           />
-        </View>
+        </LinearGradient>
 
         <View style={styles.forecastCard}>
           <Text style={styles.sectionTitle}>Next Hours</Text>
           <ForecastStrip forecast={forecast} unit={unit} />
+        </View>
+        <View style={[styles.forecastCard, { marginBottom: 48 }]}>
+          <Text style={styles.sectionTitle}>Upcoming Days</Text>
+          <FiveDayForecast data={fiveDay} unit={unit} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -340,7 +356,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "stretch",
-    backgroundColor: "#f0f4f8",
+    backgroundColor: "#d8e0e7",
     padding: 16,
     paddingTop: 12,
   },
@@ -421,13 +437,17 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   weatherCard: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: "#e5e7eb",
     marginBottom: 16,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
   forecastCard: {
     backgroundColor: "#ffffff",
@@ -442,5 +462,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 8,
     color: "#111827",
+  },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 12,
+    color: "#111827",
+    textAlign: "left",
+    paddingLeft: 4,
   },
 });

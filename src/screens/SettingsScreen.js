@@ -8,40 +8,46 @@ import { useNavigation } from "@react-navigation/native";
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Settings</Text>
-      <Text style={styles.sectionTitle}>Manage Data</Text>
 
-      <View style={styles.row}>
-        <Text style={styles.rowLabel}>Clear Favorites</Text>
+      {/* ⭐ Card wrapper around Manage Data */}
+      <View style={styles.settingsCard}>
+        <Text style={styles.sectionTitle}>Manage Data</Text>
 
-        <Pressable
-          style={styles.rowBtn}
-          onPress={async () => {
-            await clearFavorites();
-            alert("All favorites cleared.");
-          }}
-        >
-          <Text style={styles.rowBtnText}>Yes</Text>
-        </Pressable>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.rowLabel}>Clear Last Selection</Text>
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Clear Favorites</Text>
 
-        <Pressable
-          style={styles.rowBtn}
-          onPress={async () => {
-            await clearLastSelection();
-            alert("Last selection cleared.");
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Home" }],
-            });
-          }}
-        >
-          <Text style={styles.rowBtnText}>Yes</Text>
-        </Pressable>
+          <Pressable
+            style={styles.rowBtn}
+            onPress={async () => {
+              await clearFavorites();
+              alert("All favorites cleared.");
+            }}
+          >
+            <Text style={styles.rowBtnText}>Yes</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Clear Last Selection</Text>
+
+          <Pressable
+            style={styles.rowBtn}
+            onPress={async () => {
+              await clearLastSelection();
+              alert("Last selection cleared.");
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Home" }],
+              });
+            }}
+          >
+            <Text style={styles.rowBtnText}>Yes</Text>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -52,18 +58,36 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     paddingTop: 24,
-    backgroundColor: "#f0f4f8",
+    backgroundColor: "#d8e0e7",
   },
+
   title: {
     fontSize: 24,
     fontWeight: "700",
-    marginBottom: 8,
+    marginBottom: 16,
   },
+
+  /* ⭐ Card Styling */
+  settingsCard: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    marginTop: 8,
+
+    // shadow for better depth
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 12,
     color: "#111827",
   },
 

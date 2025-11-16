@@ -74,7 +74,6 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     marginVertical: 4,
-    tintColor: "#333",
   },
   titleRow: {
     flexDirection: "row",
