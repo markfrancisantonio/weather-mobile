@@ -5,10 +5,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Pressable,
-  Image,
   TextInput,
   Keyboard,
-  ScrollView,
   Alert,
 } from "react-native";
 import { getCurrentCoords } from "../services/location";
@@ -17,13 +15,14 @@ import {
   getWeatherByCity,
   getForecastByCoords,
 } from "../api/weather";
-import { formatTemp } from "../utils/units";
 import {
   saveLastSelection,
   loadLastSelection,
-  clearLastSelection,
   addFavorite,
 } from "../store/weatherStore";
+import { getBackgroundColor } from "../helpers/weatherHelpers";
+import ForecastStrip from "../components/ForecastStrip";
+import WeatherHeader from "../components/WeatherHeader";
 
 export default function HomeScreen({ navigation }) {
   const [status, setStatus] = useState("idle");
@@ -33,6 +32,14 @@ export default function HomeScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [forecast, setForecast] = useState([]);
 
+  async function fetchAndSetWeatherByCoords(lat, lon, units) {
+    const data = await getWeatherByCoords({ lat, lon, units });
+    const forecastData = await getForecastByCoords({ lat, lon, units });
+
+    setWeather(data);
+    setForecast(forecastData);
+  }
+
   useEffect(() => {
     let mounted = true;
 
@@ -41,17 +48,8 @@ export default function HomeScreen({ navigation }) {
         setStatus("loading");
         const { lat, lon } = await getCurrentCoords();
 
-        const data = await getWeatherByCoords({ lat, lon, units: unit });
-        const forecastData = await getForecastByCoords({
-          lat,
-          lon,
-          units: unit,
-        });
-
+        await fetchAndSetWeatherByCoords(lat, lon, unit);
         if (!mounted) return;
-
-        setWeather(data);
-        setForecast(forecastData);
         setStatus("ready");
       } catch (err) {
         if (!mounted) return;
@@ -84,21 +82,8 @@ export default function HomeScreen({ navigation }) {
             setWeather(data);
             setForecast(forecastData);
           } else if (last.source === "gps" && last.lat && last.lon) {
-            const data = await getWeatherByCoords({
-              lat: last.lat,
-              lon: last.lon,
-              units: last.units,
-            });
-
-            const forecastData = await getForecastByCoords({
-              lat: last.lat,
-              lon: last.lon,
-              units: last.units,
-            });
-
+            await fetchAndSetWeatherByCoords(last.lat, last.lon, last.units);
             if (!mounted) return;
-            setWeather(data);
-            setForecast(forecastData);
           } else {
             await loadWeather();
           }
@@ -126,11 +111,11 @@ export default function HomeScreen({ navigation }) {
 
     if (weather?.coord) {
       try {
-        setStatus("loading");
         const { lat, lon } = weather.coord;
-        const data = await getWeatherByCoords({ lat, lon, units: next });
-        setWeather(data);
-        setStatus("ready");
+
+        // reuse your helper to update BOTH weather + forecast
+        await fetchAndSetWeatherByCoords(lat, lon, next);
+
         await saveLastSelection({
           source: "gps",
           lat,
@@ -156,9 +141,19 @@ export default function HomeScreen({ navigation }) {
       }
       setStatus("loading");
       setErrorMsg("");
+
       const data = await getWeatherByCity({ q, units: unit });
+      const { lat, lon } = data.coord;
+      const forecastData = await getForecastByCoords({
+        lat,
+        lon,
+        units: unit,
+      });
+
       setWeather(data);
+      setForecast(forecastData);
       setStatus("ready");
+
       await saveLastSelection({
         source: "city",
         q,
@@ -206,25 +201,8 @@ export default function HomeScreen({ navigation }) {
     );
   }
 
-  const temp = weather.main.temp;
-  const displayTemp = formatTemp(temp, unit);
-  const city = weather.name;
-  const country = weather.sys?.country || "";
   const desc = weather.weather?.[0]?.description ?? "";
-  const unitLabel = unit === "metric" ? "°C" : "°F";
-  const icon = weather.weather?.[0]?.icon;
-  const iconUrl = icon
-    ? `https://openweathermap.org/img/wn/${icon}@4x.png`
-    : null;
-  const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
-  const descLc = (desc || "").toLowerCase();
-  const bgColor = descLc.includes("cloud")
-    ? "#dfe6ed"
-    : descLc.includes("rain")
-    ? "#a5c8ff"
-    : descLc.includes("clear")
-    ? "#fef5b8"
-    : "#f0f4f8";
+  const bgColor = getBackgroundColor(desc);
 
   async function useMyLocation() {
     try {
@@ -282,16 +260,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <Text style={styles.title}>
-        {city}
-        {country ? `, ${country}` : ""}
-      </Text>
-      {iconUrl ? <Image source={{ uri: iconUrl }} style={styles.icon} /> : null}
-      <Text style={styles.temp}>
-        {displayTemp}
-        {unitLabel}
-      </Text>
-      <Text style={styles.text}>{cap(desc)}</Text>
+      <WeatherHeader weather={weather} unit={unit} onToggleUnit={toggleUnit} />
       <Pressable
         onPress={handleAddFavorite}
         style={styles.addToFavoritesButton}
@@ -299,38 +268,8 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.addToFavoritesButtonText}>Add to Favorites</Text>
       </Pressable>
 
-      {forecast.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.forecastRow}
-        >
-          {forecast.slice(0, 8).map((item, index) => {
-            const time = new Date(item.dt * 1000).toLocaleTimeString("en-US", {
-              hour: "numeric",
-              hour12: true,
-            });
+      <ForecastStrip forecast={forecast} unit={unit} />
 
-            const icon = item.weather?.[0]?.icon;
-            const iconUrl = `https://openweathermap.org/img/wn/${icon}@2x.png`;
-            const temp = formatTemp(item.main.temp, unit);
-
-            return (
-              <View key={index} style={styles.forecastItem}>
-                <Text style={styles.forecastTime}>{time}</Text>
-                <Image source={{ uri: iconUrl }} style={styles.forecastIcon} />
-                <Text style={styles.forecastTemp}>{temp}</Text>
-              </View>
-            );
-          })}
-        </ScrollView>
-      )}
-
-      <Pressable onPress={toggleUnit} style={styles.toggle}>
-        <Text style={styles.toggleText}>
-          Switch to {unit === "metric" ? "°F" : "°C"}
-        </Text>
-      </Pressable>
       <View style={styles.searchRow}>
         <TextInput
           style={styles.input}
@@ -366,8 +305,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   text: { fontSize: 18, fontWeight: "600", color: "#333" },
-  title: { fontSize: 28, fontWeight: "700", marginBottom: 8 },
-  temp: { fontSize: 64, fontWeight: "800", color: "#333" },
   toggle: {
     marginTop: 16,
     paddingVertical: 10,
@@ -378,7 +315,6 @@ const styles = StyleSheet.create({
     borderColor: "#9ca3af",
   },
   toggleText: { fontSize: 16, fontWeight: "700", color: "#111" },
-  icon: { width: 120, height: 120, marginVertical: 4, tintColor: "#333" },
   searchRow: {
     flexDirection: "row",
     width: "100%",
@@ -427,42 +363,6 @@ const styles = StyleSheet.create({
   retryText: {
     color: "#fff",
     fontWeight: "700",
-    textAlign: "center",
-  },
-  forecastRow: {
-    marginTop: 16,
-    marginBottom: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  forecastItem: {
-    width: 70,
-    height: 120,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    marginRight: 10,
-  },
-  forecastTime: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  forecastIcon: {
-    width: 32,
-    height: 32,
-    marginBottom: 4,
-  },
-  forecastTemp: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#111827",
-    marginTop: 4,
     textAlign: "center",
   },
   addToFavoritesButton: {
