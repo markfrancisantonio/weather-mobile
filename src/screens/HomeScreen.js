@@ -291,8 +291,9 @@ export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bgColor }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.headerRow}>
-          <View style={styles.searchRow}>
+        <View style={styles.topCard}>
+          {/* Row 1 — Search */}
+          <View style={styles.row1}>
             <TextInput
               style={styles.input}
               placeholder="Search city (e.g., Tokyo)"
@@ -301,32 +302,39 @@ export default function HomeScreen({ navigation }) {
               returnKeyType="search"
               onSubmitEditing={searchByCity}
             />
+
             <Pressable onPress={searchByCity} style={styles.searchBtn}>
               <Text style={styles.searchBtnText}>Search</Text>
             </Pressable>
           </View>
-          <UnitToggleButton unit={unit} onToggle={toggleUnit} />
+
+          {/* Row 2 — My Location + Unit Toggle */}
+          <View style={styles.row2}>
+            <Pressable onPress={useMyLocation} style={styles.locBtnSmall}>
+              <Text style={styles.locBtnTextSmall}>My Location</Text>
+            </Pressable>
+
+            <UnitToggleButton unit={unit} onToggle={toggleUnit} />
+          </View>
         </View>
-        <View style={styles.useMyLocation}>
-          <Pressable onPress={useMyLocation} style={styles.locBtn}>
-            <Text style={styles.locBtnText}>Use My Location </Text>
-          </Pressable>
+        <View style={styles.weatherCard}>
+          <Text style={styles.sectionTitle}>Current Weather</Text>
+          <WeatherHeader
+            weather={weather}
+            unit={unit}
+            isFavorite={isFavorite}
+            onToggleFavorite={handleAddFavorite}
+          />
         </View>
-        <WeatherHeader weather={weather} unit={unit} />
-        <Pressable
-          onPress={handleAddFavorite}
-          style={styles.addToFavoritesButton}
-        >
-          <Text style={styles.addToFavoritesButtonText}>
-            {isFavorite ? "⭐" : "☆"}
-          </Text>
-        </Pressable>
-        <ForecastStrip forecast={forecast} unit={unit} />
+
+        <View style={styles.forecastCard}>
+          <Text style={styles.sectionTitle}>Next Hours</Text>
+          <ForecastStrip forecast={forecast} unit={unit} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -334,16 +342,12 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
     backgroundColor: "#f0f4f8",
     padding: 16,
-    paddingTop: 24,
+    paddingTop: 12,
   },
-  text: { fontSize: 18, fontWeight: "600", color: "#333" },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: 8,
-    marginTop: 4,
-    paddingHorizontal: 8,
+  text: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
   },
   input: {
     flex: 1,
@@ -352,7 +356,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#d1d5db",
   },
   searchBtn: {
     height: 44,
@@ -364,18 +368,6 @@ const styles = StyleSheet.create({
   searchBtnText: {
     color: "#fff",
     fontWeight: "700",
-  },
-  locBtn: {
-    marginTop: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#16a34a",
-  },
-  locBtnText: {
-    color: "#fff",
-    fontWeight: "800",
-    textAlign: "center",
   },
   retryBtn: {
     marginTop: 16,
@@ -389,34 +381,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
-  addToFavoritesButton: {
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    backgroundColor: "#0ea5e9",
-    alignSelf: "center",
-  },
-
-  addToFavoritesButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    width: "100%",
-    paddingHorizontal: 16,
-    marginBottom: 4,
-  },
-  useMyLocation: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 4,
+  topCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    marginBottom: 16,
   },
   errorContainer: {
     flex: 1,
@@ -426,6 +397,50 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f4f8",
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 12,
+  },
+  row1: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  row2: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  locBtnSmall: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#16a34a",
+  },
+  locBtnTextSmall: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  weatherCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  forecastCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 8,
+    color: "#111827",
   },
 });

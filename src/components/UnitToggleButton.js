@@ -3,26 +3,39 @@ import { Pressable, Text, StyleSheet } from "react-native";
 
 export default function UnitToggleButton({ unit, onToggle }) {
   return (
-    <Pressable onPress={onToggle} style={styles.toggle}>
-      <Text style={styles.toggleText}>
-        Switch to {unit === "metric" ? "°F" : "°C"}
+    <Pressable onPress={onToggle} style={styles.container}>
+      <Text style={[styles.option, unit === "metric" && styles.active]}>
+        °C
+      </Text>
+      <Text style={styles.separator}>|</Text>
+      <Text style={[styles.option, unit === "imperial" && styles.active]}>
+        °F
       </Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  toggle: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#d1d5db",
-    borderWidth: 1,
-    borderColor: "#9ca3af",
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: "#e5e7eb",
   },
-  toggleText: {
+  option: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#111",
+    fontWeight: "600",
+    color: "#6b7280",
+  },
+  active: {
+    color: "#111827",
+    fontWeight: "800",
+  },
+  separator: {
+    marginHorizontal: 6,
+    color: "#6b7280",
+    fontWeight: "600",
   },
 });

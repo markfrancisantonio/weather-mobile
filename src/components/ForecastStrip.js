@@ -36,8 +36,6 @@ export default function ForecastStrip({ forecast, unit }) {
 
 const styles = StyleSheet.create({
   forecastRow: {
-    marginTop: 16,
-    marginBottom: 12,
     paddingVertical: 4,
     paddingHorizontal: 8,
   },

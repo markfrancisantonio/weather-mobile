@@ -1,9 +1,14 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, Pressable } from "react-native";
 import { formatTemp } from "../utils/units";
 import { capitalize, getIconUrl } from "../helpers/weatherHelpers";
 
-export default function WeatherHeader({ weather, unit }) {
+export default function WeatherHeader({
+  weather,
+  unit,
+  isFavorite,
+  onToggleFavorite,
+}) {
   if (!weather) return null;
 
   const temp = weather.main?.temp;
@@ -17,10 +22,21 @@ export default function WeatherHeader({ weather, unit }) {
 
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>
-        {city}
-        {country ? `, ${country}` : ""}
-      </Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>
+          {city}
+          {country ? `, ${country}` : ""}
+        </Text>
+
+        {onToggleFavorite ? (
+          <Pressable onPress={onToggleFavorite} style={styles.favoriteIcon}>
+            <Text style={styles.favoriteIconText}>
+              {isFavorite ? "⭐" : "☆"}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+
       {iconUrl ? <Image source={{ uri: iconUrl }} style={styles.icon} /> : null}
       <Text style={styles.temp}>
         {displayTemp}
@@ -59,5 +75,22 @@ const styles = StyleSheet.create({
     height: 120,
     marginVertical: 4,
     tintColor: "#333",
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  favoriteIcon: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+
+  favoriteIconText: {
+    fontSize: 28,
+    lineHeight: 28,
+    marginBottom: 4,
   },
 });
