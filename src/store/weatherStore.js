@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import FavoritesScreen from "../screens/FavoritesScreen";
 
 const KEY_LAST = "@weather:lastSelection";
 
@@ -84,5 +85,13 @@ export async function removeFavorite(name, country) {
   } catch (err) {
     console.log("removeFavorite error:", err);
     return [];
+  }
+}
+
+export async function clearFavorites() {
+  try {
+    await AsyncStorage.removeItem(FAVORITEES_KEY);
+  } catch (err) {
+    console.log("clearFavorites error:", err);
   }
 }

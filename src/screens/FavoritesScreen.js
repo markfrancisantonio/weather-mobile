@@ -43,14 +43,20 @@ export default function FavoritesScreen() {
       setFavs(enriched);
     }
     fetchFavs();
-  }, [unit]);
+    const unsubscribe = navigation.addListener("focus", fetchFavs);
+    return unsubscribe;
+  }, [unit, navigation]);
+
   function toggleUnit() {
     const next = unit === "metric" ? "imperial" : "metric";
     setUnit(next);
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 32 }}
+    >
       <View style={styles.headerRow}>
         <Text style={styles.title}>Favorites</Text>
         <UnitToggleButton unit={unit} onToggle={toggleUnit} />
@@ -59,8 +65,11 @@ export default function FavoritesScreen() {
       {favs.length === 0 ? (
         <Text style={styles.text}>No favorites saved yet.</Text>
       ) : (
-        favs.map((city, index) => (
-          <View key={index} style={styles.cityRow}>
+        favs.map((city) => (
+          <View
+            key={`${city.name}-${city.country}-${city.lat}-${city.lon}`}
+            style={styles.cityRow}
+          >
             <Pressable
               style={styles.cityInfo}
               onPress={async () => {
@@ -147,6 +156,7 @@ const styles = StyleSheet.create({
   },
   cityInfo: {
     flexDirection: "column",
+    flexShrink: 1,
   },
   cityTemp: {
     fontSize: 14,

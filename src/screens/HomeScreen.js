@@ -132,7 +132,9 @@ export default function HomeScreen({ navigation }) {
     }
 
     checkFavorite();
-  }, [weather]);
+    const unsubscribe = navigation.addListener("focus", checkFavorite);
+    return unsubscribe;
+  }, [weather, navigation]);
 
   const toggleUnit = async () => {
     const next = unit === "metric" ? "imperial" : "metric";
@@ -237,8 +239,7 @@ export default function HomeScreen({ navigation }) {
       setStatus("loading");
       setErrorMsg("");
       const { lat, lon } = await getCurrentCoords();
-      const data = await getWeatherByCoords({ lat, lon, units: unit });
-      setWeather(data);
+      await fetchAndSetWeatherByCoords(lat, lon, unit);
       setStatus("ready");
       await saveLastSelection({
         source: "gps",
